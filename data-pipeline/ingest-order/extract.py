@@ -1,10 +1,4 @@
-"""
-Ingestor: Order Service (MySQL) -> S3
 
-Extrae el 100% de los registros de las tablas del order-service
-(orders, order_items) y las sube al bucket S3 como CSV, listas
-para catalogar con AWS Glue y consultar con Athena.
-"""
 
 import io
 import logging
