@@ -1,10 +1,4 @@
-"""
-Ingestor: Identity Service (DynamoDB) -> S3
 
-Extrae el 100% de los items de la tabla 'users' (DynamoDB / LocalStack)
-y los sube al bucket S3 como JSON, listos para catalogar con AWS Glue
-y consultar con Athena.
-"""
 
 import json
 import logging
