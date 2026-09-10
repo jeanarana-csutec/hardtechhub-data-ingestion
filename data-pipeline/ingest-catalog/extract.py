@@ -1,10 +1,4 @@
-"""
-Ingestor: Catalog Service (PostgreSQL) -> S3
 
-Extrae el 100% de los registros de las tablas del catalog-service
-(brands, categories, products) y las sube al bucket S3 como CSV,
-listas para catalogar con AWS Glue y consultar con Athena.
-"""
 
 import io
 import json
