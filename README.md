@@ -7,7 +7,7 @@ Incluye 3 contenedores en Python que extraen el 100% de los registros de las bas
 ## Repositorio del backend
 
 El código de los microservicios (Identity, Catalog, Order, Compatibility, Analytics) y sus bases de datos vive en:
-👉 https://github.com/SebaU12/HardTechHub
+ https://github.com/SebaU12/HardTechHub
 
 Este repositorio (`hardtechhub-data-ingestion`) es independiente y se conecta a esas bases de datos por red, usando las variables del `.env`.
 
