@@ -48,12 +48,7 @@ Por defecto cada contenedor corre **una sola vez** y termina (pull único, como 
 
 ## 3. Cómo correr el pipeline
 
-### 3.1 Prerrequisitos
-- Docker y Docker Compose instalados (en tu máquina o en la VM "MV ingesta").
-- Una cuenta de AWS con acceso a S3 (y a DynamoDB real, no LocalStack).
-- Acceso de red a la VM/host donde corren PostgreSQL y MySQL del backend (puertos 5432 y 3306 abiertos desde donde se corra este pipeline).
-
-### 3.2 Configurar variables de entorno
+### 3.1 Configurar variables de entorno
 
 ```bash
 git clone https://github.com/jeanarana-csutec/hardtechhub-data-ingestion.git
@@ -93,7 +88,7 @@ USERS_TABLE=users
 
 ⚠️ Si se usa **AWS Academy Learner Lab**, las credenciales (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`) expiran cada pocas horas y hay que refrescarlas desde el botón "AWS Details" del Lab cada vez que se reinicie la sesión.
 
-### 3.3 Levantar los contenedores
+### 3.2 Levantar los contenedores
 
 ```bash
 docker compose up -d --build
