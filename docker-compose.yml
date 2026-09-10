@@ -1,181 +1,18 @@
 services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: hardtech_catalog
-      POSTGRES_USER: hardtech
-      POSTGRES_PASSWORD: hardtech
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hardtech -d hardtech_catalog"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - hardtech-net
-
-  mysql:
-    image: mysql:8.0
-    environment:
-      MYSQL_DATABASE: hardtech_orders
-      MYSQL_USER: hardtech
-      MYSQL_PASSWORD: hardtech
-      MYSQL_ROOT_PASSWORD: root
-    command: --default-authentication-plugin=mysql_native_password
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./infrastructure/mysql/init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - hardtech-net
-
-  localstack:
-    image: localstack/localstack:3.8
-    environment:
-      SERVICES: s3,dynamodb
-      AWS_DEFAULT_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      DEBUG: 1
-    volumes:
-      - ./infrastructure/localstack/init:/etc/localstack/init/ready.d
-      - localstack_data:/var/lib/localstack
-      - /var/run/docker.sock:/var/run/docker.sock
-    healthcheck:
-      test: ["CMD", "bash", "-c", "awslocal s3 ls >/dev/null 2>&1 && awslocal dynamodb list-tables >/dev/null 2>&1"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-    networks:
-      - hardtech-net
-
-  identity-service:
-    build:
-      context: ./services/identity-service
-    environment:
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_DEFAULT_REGION: us-east-1
-      DYNAMODB_ENDPOINT: http://localstack:4566
-      USERS_TABLE: users
-    ports:
-      - "8001:8001"
-    depends_on:
-      localstack:
-        condition: service_healthy
-    networks:
-      - hardtech-net
-
-  catalog-service:
-    build:
-      context: ./services/catalog-service
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: hardtech_catalog
-      POSTGRES_USER: hardtech
-      POSTGRES_PASSWORD: hardtech
-    ports:
-      - "8002:8002"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - hardtech-net
-
-  order-service:
-    build:
-      context: ./services/order-service
-    environment:
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: hardtech_orders
-      MYSQL_USER: hardtech
-      MYSQL_PASSWORD: hardtech
-      CATALOG_SERVICE_URL: http://catalog-service:8002
-    ports:
-      - "8003:8003"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      catalog-service:
-        condition: service_started
-    networks:
-      - hardtech-net
-
-  compatibility-service:
-    build:
-      context: ./services/compatibility-service
-    environment:
-      CATALOG_SERVICE_URL: http://catalog-service:8002
-    ports:
-      - "8004:8004"
-    depends_on:
-      catalog-service:
-        condition: service_started
-    networks:
-      - hardtech-net
-
-  analytics-service:
-    build:
-      context: ./services/analytics-service
-    environment:
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_DEFAULT_REGION: us-east-1
-      S3_ENDPOINT_URL: http://localstack:4566
-      S3_BUCKET: harddtech-datalake
-      S3_EVENTS_PREFIX: raw/events/
-    ports:
-      - "8005:8005"
-    depends_on:
-      localstack:
-        condition: service_healthy
-    networks:
-      - hardtech-net
-
-  ingestor:
-    build:
-      context: ./ingestion
-    environment:
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_DEFAULT_REGION: us-east-1
-      S3_ENDPOINT_URL: http://localstack:4566
-      S3_BUCKET: hardtech-datalake
-      BATCH_SIZE: "10"
-      INTERVAL_SECONDS: "30"
-    depends_on:
-      localstack:
-        condition: service_healthy
-    networks:
-      - hardtech-net
-    restart: unless-stopped
-
   ingest-catalog:
     build:
       context: ./data-pipeline/ingest-catalog
     env_file:
       - .env
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: hardtech_catalog
-      POSTGRES_USER: hardtech
-      POSTGRES_PASSWORD: hardtech
-      S3_BUCKET: hardtechhub-bucket
-    depends_on:
-      postgres:
-        condition: service_healthy
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-hardtech_catalog}
+      POSTGRES_USER: ${POSTGRES_USER:-hardtech}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hardtech}
+      S3_BUCKET: ${S3_BUCKET_REAL:-hardtechhub-bucket}
     networks:
       - hardtech-net
-
 
   ingest-identity:
     build:
@@ -183,16 +20,15 @@ services:
     env_file:
       - .env
     environment:
-      DYNAMODB_ENDPOINT: http://localstack:4566
-      DYNAMODB_REGION: us-east-1
-      USERS_TABLE: users
-      S3_BUCKET: hardtechhub-bucket
-    depends_on:
-      localstack:
-        condition: service_healthy
+      # DYNAMODB_ENDPOINT se deja vacio a proposito: sin valor, el codigo
+      # usa el endpoint REAL de AWS DynamoDB (no LocalStack). Solo se
+      # define aqui si en algun momento se quiere apuntar a LocalStack.
+      DYNAMODB_ENDPOINT: ${DYNAMODB_ENDPOINT:-}
+      DYNAMODB_REGION: ${DYNAMODB_REGION:-us-east-1}
+      USERS_TABLE: ${USERS_TABLE:-users}
+      S3_BUCKET: ${S3_BUCKET_REAL:-hardtechhub-bucket}
     networks:
       - hardtech-net
-
 
   ingest-order:
     build:
@@ -200,25 +36,15 @@ services:
     env_file:
       - .env
     environment:
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: hardtech_orders
-      MYSQL_USER: hardtech
-      MYSQL_PASSWORD: hardtech
-      S3_BUCKET: hardtechhub-bucket
-    depends_on:
-      mysql:
-        condition: service_healthy
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT:-3306}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-hardtech_orders}
+      MYSQL_USER: ${MYSQL_USER:-hardtech}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-hardtech}
+      S3_BUCKET: ${S3_BUCKET_REAL:-hardtechhub-bucket}
     networks:
       - hardtech-net
 
-
 networks:
   hardtech-net:
-    external: true
-    name: hardtech-net
-
-volumes:
-  postgres_data:
-  mysql_data:
-  localstack_data:
+    driver: bridge
