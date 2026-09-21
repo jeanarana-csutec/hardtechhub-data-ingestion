@@ -18,7 +18,7 @@ logging.basicConfig(
 log = logging.getLogger("ingest-identity")
 
 # --- Config ---
-DYNAMODB_ENDPOINT = os.getenv("DYNAMODB_ENDPOINT", "http://localstack:4566")
+DYNAMODB_ENDPOINT = os.getenv("DYNAMODB_ENDPOINT")
 USERS_TABLE = os.getenv("USERS_TABLE", "users")
 
 S3_ENDPOINT = os.getenv("S3_ENDPOINT_URL")  # vacio/no seteado = AWS real
@@ -30,26 +30,29 @@ INTERVAL_SECONDS = int(os.getenv("INTERVAL_SECONDS", "0"))
 
 
 def get_dynamodb_resource():
-    return boto3.resource(
-        "dynamodb",
-        endpoint_url=DYNAMODB_ENDPOINT,
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "test"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "test"),
+    kwargs = dict(
         region_name=os.getenv("DYNAMODB_REGION", "us-east-1"),
     )
-
-
+    if os.getenv("AWS_ACCESS_KEY_ID"):
+        kwargs["aws_access_key_id"] = os.getenv("AWS_ACCESS_KEY_ID")
+        kwargs["aws_secret_access_key"] = os.getenv("AWS_SECRET_ACCESS_KEY")
+        if os.getenv("AWS_SESSION_TOKEN"):
+            kwargs["aws_session_token"] = os.getenv("AWS_SESSION_TOKEN")
+    if DYNAMODB_ENDPOINT:
+        kwargs["endpoint_url"] = DYNAMODB_ENDPOINT
+    return boto3.resource("dynamodb", **kwargs)
 def get_s3_client():
     kwargs = dict(
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "test"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "test"),
-        aws_session_token=os.getenv("AWS_SESSION_TOKEN"),  # requerido en AWS Academy Learner Lab
         region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
     )
-    if S3_ENDPOINT:  # solo se pasa si estamos usando LocalStack
+    if os.getenv("AWS_ACCESS_KEY_ID"):
+        kwargs["aws_access_key_id"] = os.getenv("AWS_ACCESS_KEY_ID")
+        kwargs["aws_secret_access_key"] = os.getenv("AWS_SECRET_ACCESS_KEY")
+        if os.getenv("AWS_SESSION_TOKEN"):
+            kwargs["aws_session_token"] = os.getenv("AWS_SESSION_TOKEN")
+    if S3_ENDPOINT:
         kwargs["endpoint_url"] = S3_ENDPOINT
     return boto3.client("s3", **kwargs)
-
 
 def decimal_default(obj):
     """DynamoDB devuelve numeros como Decimal; json.dumps no sabe serializarlos."""
