@@ -20,13 +20,12 @@ services:
     env_file:
       - .env
     environment:
-      # DYNAMODB_ENDPOINT se deja vacio a proposito: sin valor, el codigo
-      # usa el endpoint REAL de AWS DynamoDB (no LocalStack). Solo se
-      # define aqui si en algun momento se quiere apuntar a LocalStack.
-      DYNAMODB_ENDPOINT: ${DYNAMODB_ENDPOINT:-}
-      DYNAMODB_REGION: ${DYNAMODB_REGION:-us-east-1}
-      USERS_TABLE: ${USERS_TABLE:-users}
+      MONGO_URI: ${MONGO_URI}
+      MONGO_DB: ${MONGO_DB:-hardtech_identity}
+      MONGO_USERS_COLLECTION: ${MONGO_USERS_COLLECTION:-users}
+
       S3_BUCKET: ${S3_BUCKET_REAL:-hardtechhub-bucket}
+      S3_PREFIX: db-extracts/identity
     networks:
       - hardtech-net
 
