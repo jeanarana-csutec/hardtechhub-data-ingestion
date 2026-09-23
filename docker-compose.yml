@@ -1,4 +1,5 @@
 services:
+
   ingest-catalog:
     build:
       context: ./data-pipeline/ingest-catalog
@@ -10,24 +11,28 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-hardtech_catalog}
       POSTGRES_USER: ${POSTGRES_USER:-hardtech}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hardtech}
+
       S3_BUCKET: ${S3_BUCKET_REAL:-hardtechhub-bucket}
+
     networks:
       - hardtech-net
 
-  ingest-identity:
+
+  ingest-inventory:
     build:
-      context: ./data-pipeline/ingest-identity
+      context: ./data-pipeline/ingest-inventory
     env_file:
       - .env
     environment:
-      MONGO_URI: ${MONGO_URI}
-      MONGO_DB: ${MONGO_DB:-hardtech_identity}
-      MONGO_USERS_COLLECTION: ${MONGO_USERS_COLLECTION:-users}
+      INVENTORY_MONGO_URI: ${INVENTORY_MONGO_URI}
+      INVENTORY_MONGO_DB: ${INVENTORY_MONGO_DB:-hardtech_inventory}
 
       S3_BUCKET: ${S3_BUCKET_REAL:-hardtechhub-bucket}
-      S3_PREFIX: db-extracts/identity
+      S3_PREFIX: db-extracts/inventory
+
     networks:
       - hardtech-net
+
 
   ingest-order:
     build:
@@ -40,9 +45,12 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-hardtech_orders}
       MYSQL_USER: ${MYSQL_USER:-hardtech}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-hardtech}
+
       S3_BUCKET: ${S3_BUCKET_REAL:-hardtechhub-bucket}
+
     networks:
       - hardtech-net
+
 
 networks:
   hardtech-net:
